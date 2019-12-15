@@ -236,132 +236,129 @@ int main(int argc, char ** argv)
    printf ("Creation du thread serveur tcp !\n");
    synchro=0;
    ret = pthread_create ( & thread_serveur_tcp_id, NULL, fn_serveur_tcp, NULL);
-
-    while (!quit)
-    {
-	if (SDL_PollEvent(&event))
-	{
-		//printf("un event\n");
-        	switch (event.type)
-        	{
-            		case SDL_QUIT:
-                		quit = 1;
-                		break;
-			case  SDL_MOUSEBUTTONDOWN:
-				SDL_GetMouseState( &mx, &my );
-				//printf("mx=%d my=%d\n",mx,my);
-				if ((mx<200) && (my<50) && (connectEnabled==1))
+   
+   while (!quit)
+     {
+       if (SDL_PollEvent(&event))
+	 {
+	   //printf("un event\n");
+	   switch (event.type)
+	     {
+	     case SDL_QUIT:
+	       quit = 1;
+	       break;
+	     case  SDL_MOUSEBUTTONDOWN:
+	       SDL_GetMouseState( &mx, &my );
+	       //printf("mx=%d my=%d\n",mx,my);
+	       if ((mx<200) && (my<50) && (connectEnabled==1))
+		 {
+		   sprintf(sendBuffer,"C %s %d %s",gClientIpAddress,gClientPort,gName);		   
+		   // RAJOUTER DU CODE ICI
+		   sendMessageToServer(gServerIpAddress, gServerPort, sendBuffer);
+		   connectEnabled=0;
+		 }
+	       else if ((mx>=0) && (mx<200) && (my>=90) && (my<330))
+		 {
+		   joueurSel=(my-90)/60;
+		   guiltSel=-1;
+		 }
+	       else if ((mx>=200) && (mx<680) && (my>=0) && (my<90))
 				{
-					sprintf(sendBuffer,"C %s %d %s",gClientIpAddress,gClientPort,gName);
-
-					// RAJOUTER DU CODE ICI
-
-					connectEnabled=0;
+				  objetSel=(mx-200)/60;
+				  guiltSel=-1;
 				}
-				else if ((mx>=0) && (mx<200) && (my>=90) && (my<330))
-				{
-					joueurSel=(my-90)/60;
-					guiltSel=-1;
-				}
-				else if ((mx>=200) && (mx<680) && (my>=0) && (my<90))
-				{
-					objetSel=(mx-200)/60;
-					guiltSel=-1;
-				}
-				else if ((mx>=100) && (mx<250) && (my>=350) && (my<740))
-				{
-					joueurSel=-1;
-					objetSel=-1;
-					guiltSel=(my-350)/30;
-				}
-				else if ((mx>=250) && (mx<300) && (my>=350) && (my<740))
-				{
-					int ind=(my-350)/30;
-					guiltGuess[ind]=1-guiltGuess[ind];
-				}
-				else if ((mx>=500) && (mx<700) && (my>=350) && (my<450) && (goEnabled==1))
-				{
-					printf("go! joueur=%d objet=%d guilt=%d\n",joueurSel, objetSel, guiltSel);
-					if (guiltSel!=-1)
-					{
-						sprintf(sendBuffer,"G %d %d",gId, guiltSel);
+	       else if ((mx>=100) && (mx<250) && (my>=350) && (my<740))
+		 {
+		   joueurSel=-1;
+		   objetSel=-1;
+		   guiltSel=(my-350)/30;
+		 }
+	       else if ((mx>=250) && (mx<300) && (my>=350) && (my<740))
+		 {
+		   int ind=(my-350)/30;
+		   guiltGuess[ind]=1-guiltGuess[ind];
+		 }
+	       else if ((mx>=500) && (mx<700) && (my>=350) && (my<450) && (goEnabled==1))
+		 {
+		   printf("go! joueur=%d objet=%d guilt=%d\n",joueurSel, objetSel, guiltSel);
+		   if (guiltSel!=-1)
+		     {
+		       sprintf(sendBuffer,"G %d %d",gId, guiltSel);
+		       sendMessageToServer(gServerIpAddress, gServerPort, sendBuffer);
+		       // RAJOUTER DU CODE ICI		       
+		     }
+		   else if ((objetSel!=-1) && (joueurSel==-1))
+		     {
+		       sprintf(sendBuffer,"O %d %d",gId, objetSel);
+		        sendMessageToServer(gServerIpAddress, gServerPort, sendBuffer);
+		       // RAJOUTER DU CODE ICI		       
+		     }
+		   else if ((objetSel!=-1) && (joueurSel!=-1))
+		     {
+		       sprintf(sendBuffer,"S %d %d %d",gId, joueurSel,objetSel);
+		        sendMessageToServer(gServerIpAddress, gServerPort, sendBuffer);
+		       // RAJOUTER DU CODE ICI		       
+		     }
+		 }
+	       else
+		 {
+		   joueurSel=-1;
+		   objetSel=-1;
+		   guiltSel=-1;
+		 }
+	       break;
+	     case  SDL_MOUSEMOTION:
+	       SDL_GetMouseState( &mx, &my );
+	       break;
+	     }
+	 }
 
-					// RAJOUTER DU CODE ICI
-
-					}
-					else if ((objetSel!=-1) && (joueurSel==-1))
-					{
-						sprintf(sendBuffer,"O %d %d",gId, objetSel);
-
-					// RAJOUTER DU CODE ICI
-
-					}
-					else if ((objetSel!=-1) && (joueurSel!=-1))
-					{
-						sprintf(sendBuffer,"S %d %d %d",gId, joueurSel,objetSel);
-
-					// RAJOUTER DU CODE ICI
-
-					}
-				}
-				else
-				{
-					joueurSel=-1;
-					objetSel=-1;
-					guiltSel=-1;
-				}
-				break;
-			case  SDL_MOUSEMOTION:
-				SDL_GetMouseState( &mx, &my );
-				break;
-        	}
-	}
-
-        if (synchro==1)
-        {
-                pthread_mutex_lock( &mutex );
-                printf("consomme |%s|\n",gbuffer);
+       if (synchro==1)
+	 {
+	   pthread_mutex_lock( &mutex );
+	   printf("consomme |%s|\n",gbuffer);
 		switch (gbuffer[0])
-		{
-			// Message 'I' : le joueur recoit son Id
-			case 'I':
+		  {
+		    // Message 'I' : le joueur recoit son Id
+		  case 'I':
+		    // RAJOUTER DU CODE ICI
+		    gId = gbuffer[2];
+		    break;
+		    // Message 'L' : le joueur recoit la liste des joueurs
+		  case 'L':
+		    // RAJOUTER DU CODE ICI
+		    
+		    break;
+		    // Message 'D' : le joueur recoit ses trois cartes
+		  case 'D':
+			  // RAJOUTER DU CODE ICI
+		    sscanf(gbuffer,"D %d %d %d", &b[0], &b[1], &b[2]);
+		    break;
+		    // Message 'M' : le joueur recoit le n° du joueur courant
+		    // Cela permet d'affecter goEnabled pour autoriser l'affichage du bouton go
+		  case 'M':
 				// RAJOUTER DU CODE ICI
-
-				break;
-			// Message 'L' : le joueur recoit la liste des joueurs
-			case 'L':
-				// RAJOUTER DU CODE ICI
-
-				break;
-			// Message 'D' : le joueur recoit ses trois cartes
-			case 'D':
-				// RAJOUTER DU CODE ICI
-
-				break;
-			// Message 'M' : le joueur recoit le n° du joueur courant
-			// Cela permet d'affecter goEnabled pour autoriser l'affichage du bouton go
-			case 'M':
-				// RAJOUTER DU CODE ICI
-
-				break;
-			// Message 'V' : le joueur recoit une valeur de tableCartes
-			case 'V':
-				// RAJOUTER DU CODE ICI
-
-				break;
-		}
+		    if(gbuffer[2] == gId)
+		      goEnabled = 1;
+		    break;
+		    // Message 'V' : le joueur recoit une valeur de tableCartes
+		  case 'V':
+		    // RAJOUTER DU CODE ICI
+		    
+		    break;
+		  }
 		synchro=0;
                 pthread_mutex_unlock( &mutex );
         }
 
-        SDL_Rect dstrect_grille = { 512-250, 10, 500, 350 };
-        SDL_Rect dstrect_image = { 0, 0, 500, 330 };
-        SDL_Rect dstrect_image1 = { 0, 340, 250, 330/2 };
+       SDL_Rect dstrect_grille = { 512-250, 10, 500, 350 };
+       SDL_Rect dstrect_image = { 0, 0, 500, 330 };
+       SDL_Rect dstrect_image1 = { 0, 340, 250, 330/2 };
 
-	SDL_SetRenderDrawColor(renderer, 255, 230, 230, 230);
-	SDL_Rect rect = {0, 0, 1024, 768}; 
-	SDL_RenderFillRect(renderer, &rect);
-
+       SDL_SetRenderDrawColor(renderer, 255, 230, 230, 230);
+       SDL_Rect rect = {0, 0, 1024, 768}; 
+       SDL_RenderFillRect(renderer, &rect);
+	
 	if (joueurSel!=-1)
 	{
 		SDL_SetRenderDrawColor(renderer, 255, 180, 180, 255);
