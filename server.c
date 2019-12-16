@@ -352,7 +352,11 @@ int main(int argc, char *argv[])
         printf("Le joueur %d a choisi le coupable %d\n", gId, guiltSel);
         if(guiltSel == deck[12]){
           // RAJOUTER DU CODE ICI
-
+          printf("Le choix est correct ,le joueur %s est le gagnant!\nLe coupable est %s\n", tcpClients[gId].name, tcpClients[guiltSel].name);
+          sprintf(reply,"M %d",-1);
+          broadcastMessage(reply);
+          sprintf("Le choix est correct\nle joueur %s est le gagnant!\nLe coupable est %s\n", tcpClients[gId].name, tcpClients[guiltSel].name);
+          broadcastMessage(reply);
         }
         else {
 
@@ -361,6 +365,16 @@ int main(int argc, char *argv[])
 				break;
       case 'O':  // qui
 				// RAJOUTER DU CODE ICI
+        sscanf(buffer,"O %d %d", &gId, &objetSel);
+        for( i=0; i<nbClients; i++){
+             sprintf(reply,"V %d %d %d", i, objetSel, tableCartes[i][objetSel] >= 1? 100: 0);
+             broadcastMessage(reply);
+        }
+        joueurCourant++;
+        if(joueurCourant == 4)
+          joueurCourant = 0;
+        sprintf(reply,"M %d",joueurCourant);
+        broadcastMessage(reply);
 				break;
 			case 'S':       // combien
 				// RAJOUTER DU CODE ICI

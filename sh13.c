@@ -316,7 +316,7 @@ int main(int argc, char ** argv)
        if (synchro==1)
 	 {
 	   pthread_mutex_lock( &mutex );
-	   printf("consomme |%s|\n",gbuffer);
+	   printf("consomme |%s|\n",gbuffer);//Quelque soit on a reçu, le print au début.
 		switch (gbuffer[0])
 		  {
 		    // Message 'I' : le joueur recoit son Id
@@ -346,10 +346,16 @@ int main(int argc, char ** argv)
           printf("C'est moi! \n");
 		      goEnabled = 1;
         }
+        elseif (gbuffer[2] == -1){
+          printf("Le gagnant est ")
+          goEnabled = 0;
+          quit = 1;
+        }
         else{
           printf("C'est pas moi. \n");
           goEnabled = 0;
         }
+
 		    break;
 		    // Message 'V' : le joueur recoit une valeur de tableCartes
 		  case 'V':
@@ -451,7 +457,7 @@ int main(int argc, char ** argv)
 			if (tableCartes[i][j]!=-1)
 			{
 				char mess[10];
-				if (tableCartes[i][j]==100)
+				if (tableCartes[i][j]==100) // en cas ou il a au moins 1 carte
 					sprintf(mess,"*");
 				else
 					sprintf(mess,"%d",tableCartes[i][j]);
