@@ -710,6 +710,7 @@ int main(int argc, char ** argv)
         SDL_RenderPresent(renderer);
     }
 
+    printf("%s", gbuffer);
     SDL_DestroyTexture(texture_deck[0]);
     SDL_DestroyTexture(texture_deck[1]);
     SDL_FreeSurface(deck[0]);
