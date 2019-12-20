@@ -28,6 +28,7 @@ int tableCartes[4][8];
 int b[3];
 int goEnabled;
 int connectEnabled;
+int horsTour[4]={0,0,0,0};
 
 char *nbobjets[]={"5","5","5","5","4","3","3","3"};
 char *nbnoms[]={"Sebastian Moran", "irene Adler", "inspector Lestrade",
@@ -74,6 +75,7 @@ void *fn_serveur_tcp(void *arg)
                 }
 
                 bzero(gbuffer,256);
+                //n est nb des caractères éffectives
                 n = read(newsockfd,gbuffer,255);
                 if (n < 0)
                 {
@@ -141,7 +143,7 @@ int main(int argc, char ** argv)
 	int ret;
 	int i,j;
 
-    int quit = 0;
+	int quit = 0,endProcess = 0;
     SDL_Event event;
 	int mx,my;
 	char sendBuffer[256];
@@ -317,12 +319,15 @@ int main(int argc, char ** argv)
 	 {
 	   pthread_mutex_lock( &mutex );
 	   printf("consomme |%s|\n",gbuffer);//Quelque soit on a reçu, le print au début.
+     int joueurCourant;
 		switch (gbuffer[0])
 		  {
 		    // Message 'I' : le joueur recoit son Id
 		  case 'I':
 		    // RAJOUTER DU CODE ICI
-		    gId = gbuffer[2];
+		    sscanf(gbuffer,"I %d",&gId);
+
+        if(gId == 0) printf("gid=0");
         printf("Mon ID est: %d\n", gId);
 		    break;
 		    // Message 'L' : le joueur recoit la liste des joueurs
@@ -341,13 +346,22 @@ int main(int argc, char ** argv)
 		    // Cela permet d'affecter goEnabled pour autoriser l'affichage du bouton go
 		  case 'M':
 				// RAJOUTER DU CODE ICI
-        printf("le n° du joueur courant est %d\n", gbuffer[2]);
-		    if(gbuffer[2] == gId){
+        sscanf(gbuffer,"M %d %d %d %d %d",&joueurCourant, &horsTour[0],&horsTour[1],&horsTour[2],&horsTour[3]);
+        printf("le n° du joueur courant est %d\n",joueurCourant);
+
+		    if(joueurCourant == gId && horsTour[gId]!= 1){
           printf("C'est moi! \n");
 		      goEnabled = 1;
         }
-        elseif (gbuffer[2] == -1){
-          printf("Le gagnant est ")
+        else if(joueurCourant == gId && horsTour[gId]== 1){
+          printf("Je suis interdit.");
+		      goEnabled = 0;
+          sprintf(sendBuffer,"A");
+          sendMessageToServer(gServerIpAddress, gServerPort, sendBuffer);
+
+        }
+		    else if (joueurCourant == -1){
+          printf("Le gagnant est ");
           goEnabled = 0;
           quit = 1;
         }
@@ -360,11 +374,11 @@ int main(int argc, char ** argv)
 		    // Message 'V' : le joueur recoit une valeur de tableCartes
 		  case 'V':
 		    // RAJOUTER DU CODE ICI
-        int joueurrecu,objetrecu,nbrecu;
-		    sscanf(gbuffer,"V %d %d %d", joueurrecu, objetrecu, nbrecu);
+		    {int joueurrecu,objetrecu,nbrecu;
+		    sscanf(gbuffer,"V %d %d %d", &joueurrecu, &objetrecu, &nbrecu);
         tableCartes[joueurrecu][objetrecu] = nbrecu;
         printf("player %d a %d objet %d\n", joueurrecu, tableCartes[joueurrecu][objetrecu], objetrecu);
-		    break;
+	break;}
 		  }
 		synchro=0;
                 pthread_mutex_unlock( &mutex );
@@ -719,6 +733,10 @@ int main(int argc, char ** argv)
     SDL_DestroyWindow(window);
 
     SDL_Quit();
-
+    /*  while(!endProcess){
+      //gbuffer = ?
+      if()
+	endProcess = 1;
+    }*/
     return 0;
 }

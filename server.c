@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <time.h>
 
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -27,7 +28,7 @@ char *nomcartes[]=
   "inspector Hopkins", "Sherlock Holmes", "John Watson", "Mycroft Holmes",
   "Mrs. Hudson", "Mary Morstan", "James Moriarty"};
 int joueurCourant;
-int horsTour[3]={4,4,4};
+int horsTour[4]={0,0,0,0};
 int flag = 0;
 void error(const char *msg)
 {
@@ -39,7 +40,7 @@ void melangerDeck()
 {
   int i;
   int index1,index2,tmp;
-
+  srand(time(NULL));
   for (i=0;i<1000;i++)
     {
       index1=rand()%13;
@@ -329,12 +330,12 @@ int main(int argc, char *argv[])
 		       //Envoie la ligne
 		      for(int j=0; j<8; j++){
 			         sprintf(reply,"V %d %d %d", i, j, tableCartes[i][j]);
-			         sendMessageToClient(tcpClients[i].ipAddress, tcpClients[temp].port, reply);
+			         sendMessageToClient(tcpClients[i].ipAddress, tcpClients[i].port, reply);
 		      }
 		    }
 
 		    // On envoie enfin un message a tout le monde pour definir qui est le joueur courant=0
-		    sprintf(reply,"M %d",joueurCourant);
+		       sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
 		    broadcastMessage(reply);
 		    fsmServer=1;
 		  }
@@ -343,44 +344,40 @@ int main(int argc, char *argv[])
 	}
 	else if (fsmServer==1){
 
-    int gId, guiltSel, joueurSel, objetSel;
+    int gId=-1, guiltSel=-1, joueurSel=-1, objetSel=-1;
 		switch (buffer[0])
 		{
+      case 'A':
+      joueurCourant++;
+      if(joueurCourant == 4)
+        joueurCourant = 0;
+       sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
+      broadcastMessage(reply);
+        break;
       case 'G':
 				// RAJOUTER DU CODE ICI
-
         sscanf(buffer,"G %d %d",&gId, &guiltSel);
         printf("Le joueur %d a choisi le coupable %d\n", gId, guiltSel);
-        if(guiltSel == deck[12]){
+        if(deck[12] == guiltSel){
           // RAJOUTER DU CODE ICI
           printf("Le choix est correct ,le joueur %s est le gagnant!\nLe coupable est %s\n", tcpClients[gId].name, tcpClients[guiltSel].name);
           sprintf(reply,"M %d",-1);
-          broadcastMessage(reply);
-          sprintf("Le choix est correct ,le joueur %s est le gagnant!\nLe coupable est %s\n", tcpClients[gId].name, tcpClients[guiltSel].name);
-          broadcastMessage(reply);
+         broadcastMessage(reply);
+	     sprintf(reply,"Le choix est correct ,le joueur %s est le gagnant!\nLe coupable est %s\n", tcpClients[gId].name, tcpClients[guiltSel].name);
+	     broadcastMessage(reply);
+       fsmServer=0;
         }
         else {
       // RAJOUTER DU CODE ICI
           printf("Le choix est incorrect, le joueur %s est mis hors du tour.", tcpClients[gId].name);
-          sprintf(reply,"Le joueur %s est mis hors du tour.", tcpClients[gId].name);
+	     sprintf(reply,"Le joueur %s est mis hors du tour.", tcpClients[gId].name);
           broadcastMessage(reply);
-          for(i=0;i<3;i++)
-          {
-            if(horsTour[i]==4){
-            horsTour[i] = gId;
-            break;
-           }
-          }
+            horsTour[gId] = 1;
+
           joueurCourant++;
           if(joueurCourant == 4)
             joueurCourant = 0;
-          for(i=0;i<3;i++)
-            {
-                if(horsTour[i] == joueurCourant){
-                joueurCourant++;
-               }
-          }
-          sprintf(reply,"M %d",joueurCourant);
+         sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
           broadcastMessage(reply);
         }
 
@@ -395,13 +392,8 @@ int main(int argc, char *argv[])
         joueurCourant++;
         if(joueurCourant == 4)
           joueurCourant = 0;
-        for(i=0;i<3;i++)
-        {
-            if(horsTour[i] == joueurCourant){
-            joueurCourant++;
-           }
-        }
-        sprintf(reply,"M %d",joueurCourant);
+
+         sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
         broadcastMessage(reply);
 				break;
 			case 'S':       // combien
@@ -414,17 +406,12 @@ int main(int argc, char *argv[])
         joueurCourant++;
         if(joueurCourant == 4)
           joueurCourant = 0;
-        for(i=0;i<3;i++)
-          {
-              if(horsTour[i] == joueurCourant){
-              joueurCourant++;
-             }
-        }
-        sprintf(reply,"M %d",joueurCourant);
+
+         sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
         broadcastMessage(reply);
 
 				break;
-      default
+		default:
         break;
 		}
         }
