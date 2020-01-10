@@ -29,7 +29,7 @@ char *nomcartes[]=
   "Mrs. Hudson", "Mary Morstan", "James Moriarty"};
 int joueurCourant;
 int horsTour[4]={0,0,0,0};
-int flag = 0;
+int gId=-1, guiltSel=-1, joueurSel=-1, objetSel=-1;
 void error(const char *msg)
 {
   perror(msg);
@@ -212,7 +212,23 @@ void broadcastMessage(char *mess)
                         tcpClients[i].port,
                         mess);
 }
-
+//passer au joueur suivant
+void nextplayer(char *reply){
+	joueurCourant++;
+	if(joueurCourant == 4)
+		joueurCourant = 0;
+	sprintf(reply,"M %d %d %d %d %d",joueurCourant,horsTour[0],horsTour[1],horsTour[2],horsTour[3]);
+	broadcastMessage(reply);
+}
+//annoncer le resultat 
+void getwinner(char *reply){
+	printf("Le joueur %s est le gagnant!\nLe coupable est %s\n",tcpClients[gId].name, nomcartes[deck[12]]);
+	sprintf(reply,"M %d",-1);
+	broadcastMessage(reply);
+	sprintf(reply,"Le joueur %s est le gagnant!\nLe coupable est %s\n",
+			tcpClients[gId].name,nomcartes[deck[12]]);
+	broadcastMessage(reply);
+}
 int main(int argc, char *argv[])
 {
      int sockfd, newsockfd, portno;
@@ -284,49 +300,40 @@ int main(int argc, char *argv[])
 	    switch (buffer[0])
 	      { //message du client
 	      case 'C':
-		sscanf(buffer,"%c %s %d %s", &com, clientIpAddress, &clientPort, clientName);
-		printf("COM=%c ipAddress=%s port=%d name=%s\n",com, clientIpAddress, clientPort, clientName);
-		// fsmServer==0 alors j'attends les connexions de tous les joueurs
-		strcpy(tcpClients[nbClients].ipAddress,clientIpAddress);
-		tcpClients[nbClients].port=clientPort;
-		strcpy(tcpClients[nbClients].name,clientName);
-		nbClients++;
-		printClients();
-		// rechercher l'id du joueur qui vient de se connecter
-		id=findClientByName(clientName);
-		printf("id=%d\n",id);
-
-		// lui envoyer un message personnel pour lui communiquer son id
-		sprintf(reply,"I %d",id);
-		sendMessageToClient(tcpClients[id].ipAddress,
-				    tcpClients[id].port,
-				    reply);
-
-		// Envoyer un message broadcast pour communiquer a tout le monde la liste des joueurs actuellement
-		// connectes
-
-		sprintf(reply,"L %s %s %s %s", tcpClients[0].name, tcpClients[1].name, tcpClients[2].name, tcpClients[3].name);
-		broadcastMessage(reply);
-		// Si le nombre de joueurs atteint 4, alors on peut lancer le jeu
+			sscanf(buffer,"%c %s %d %s", &com, clientIpAddress, &clientPort, clientName);
+			printf("COM=%c ipAddress=%s port=%d name=%s\n",com, clientIpAddress, clientPort, clientName);
+			// fsmServer==0 alors j'attends les connexions de tous les joueurs
+			strcpy(tcpClients[nbClients].ipAddress,clientIpAddress);
+			tcpClients[nbClients].port=clientPort;
+			strcpy(tcpClients[nbClients].name,clientName);
+			nbClients++;
+			printClients();
+			// rechercher l'id du joueur qui vient de se connecter
+			id=findClientByName(clientName);
+			printf("id=%d\n",id);
+			// lui envoyer un message personnel pour lui communiquer son id
+			sprintf(reply,"I %d",id);
+			sendMessageToClient(tcpClients[id].ipAddress, tcpClients[id].port,reply);
+			// Envoyer un message broadcast pour communiquer a tout le monde la liste des joueurs actuellement
+			sprintf(reply,"L %s %s %s %s", tcpClients[0].name, tcpClients[1].name, tcpClients[2].name, tcpClients[3].name);
+			broadcastMessage(reply);
+			// Si le nombre de joueurs atteint 4, alors on peut lancer le jeu
 
 		if (nbClients==4)
 		  {
-		    // On envoie ses cartes au joueur 0, ainsi que la ligne qui lui correspond dans tableCartes
-		    // On envoie ses cartes au joueur 1, ainsi que la ligne qui lui correspond dans tableCartes
-		    // On envoie ses cartes au joueur 2, ainsi que la ligne qui lui correspond dans tableCartes
-		    // On envoie ses cartes au joueur 3, ainsi que la ligne qui lui correspond dans tableCartes
+		    // On envoie ses cartes aux joueurs, ainsi que la ligne qui lui correspond dans tableCartes
 		    for( i=0; i<4; i++){
 		      // Envoie les cartes
 		      sprintf(reply,"D %d %d %d",deck[i*3], deck[i*3+1], deck[i*3+2]);
 		      sendMessageToClient(tcpClients[i].ipAddress, tcpClients[i].port, reply);
 		       //Envoie la ligne
 		      for(int j=0; j<8; j++){
-			sprintf(reply,"V %d %d %d", i, j, tableCartes[i][j]);
-			sendMessageToClient(tcpClients[i].ipAddress, tcpClients[i].port, reply);
+				sprintf(reply,"V %d %d %d", i, j, tableCartes[i][j]);
+				sendMessageToClient(tcpClients[i].ipAddress, tcpClients[i].port, reply);
 		      }
 		    }
 		    // On envoie enfin un message a tout le monde pour definir qui est le joueur courant=0
-		    sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
+		    sprintf(reply,"M %d %d %d %d %d",joueurCourant,horsTour[0],horsTour[1],horsTour[2],horsTour[3]);
 		    broadcastMessage(reply);
 		    fsmServer=1;
 		  }
@@ -334,84 +341,47 @@ int main(int argc, char *argv[])
 	      }
 	  }
 	else if (fsmServer==1){
-
-	  int gId=-1, guiltSel=-1, joueurSel=-1, objetSel=-1;
 	  int i,j=0;
 	  switch (buffer[0])
 	    {
 	    case 'A':
-	      
-	      joueurCourant++;
-	      if(joueurCourant == 4)
-		joueurCourant = 0;
-	      sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
-	      broadcastMessage(reply);
+	      nextplayer(reply);
 	      break;
-	      
 	    case 'G':
-	     
 	      sscanf(buffer,"G %d %d",&gId, &guiltSel);
-	      printf("Le joueur %d a choisi le coupable %d\n", gId, guiltSel);
-	      
-	      if(deck[12] == guiltSel){
-		printf("Le choix est correct ,le joueur %s est le gagnant!\nLe coupable est %s\n",
-		       tcpClients[gId].name, nomcartes[deck[12]]);
-		sprintf(reply,"M %d",-1);
-		broadcastMessage(reply);
-		sprintf(reply,"Le choix est correct ,le joueur %s est le gagnant!\nLe coupable est %s\n",
-			tcpClients[gId].name,nomcartes[deck[12]]);
-		broadcastMessage(reply);
-		fsmServer=0;
-	      }
-	      else {
-		printf("Le choix est incorrect, le joueur %s est mis hors du tour.", tcpClients[gId].name);
-		sprintf(reply,"Le joueur %s est mis hors du tour.", tcpClients[gId].name);
-		broadcastMessage(reply);
-		horsTour[gId] = 1;
-		for(i=0;i<4;i++){
-		  if(horsTour[i]==1)
-		    j++;
+	      printf("Le joueur %d a choisi le coupable %d\n", gId, guiltSel);	      
+		  if(deck[12] == guiltSel){
+			getwinner(reply);
+			fsmServer=0;
+	      	}
+		  else {
+			sprintf(reply,"Le joueur %s est mis hors du tour.", tcpClients[gId].name);
+			broadcastMessage(reply);
+			printf("%s\n",reply);
+			horsTour[gId] = 1;
+			for(i=0;i<4;i++){
+			  if(horsTour[i]==1)
+		  	  j++;
+			}
+			if(j==3){
+			  for(i=0;i<4;i++){
+		  	  if(horsTour[i]==0)
+		  	    gId=i;
+		  	  }
+			getwinner(reply);
+		  	fsmServer=0;
+		  	break;
+			}
+			nextplayer(reply);
 		}
-		if(j==3){
-		  for(i=0;i<4;i++){
-		    if(horsTour[i]==0)
-		      j=i;
-		  }
-		  sprintf(reply,"M %d",-1);
-		  broadcastMessage(reply);
-		  printf(reply,"Le joueur %s est le gagnant!\nLe coupable est %s\n",
-			  tcpClients[gId].name, nomcartes[deck[12]]);
-		  sprintf(reply,"Le joueur %s est le gagnant!\nLe coupable est %s\n",
-			  tcpClients[gId].name, nomcartes[deck[12]]);
-		  broadcastMessage(reply);
-		  fsmServer=0;
-		  break;
-		}
-		
-		joueurCourant++;
-		if(joueurCourant == 4)
-		  joueurCourant = 0;
-		sprintf(reply,"M %d %d %d %d %d",joueurCourant,horsTour[0],horsTour[1],horsTour[2],horsTour[3]);
-		broadcastMessage(reply);
-	      }
-
-	      break;
-	      
-	    case 'O':  // qui
-			       
+	      break;	      
+	    case 'O':  // Qui a combien       
 	      sscanf(buffer,"O %d %d", &gId, &objetSel);
 	      for( i=0; i<nbClients; i++){
-		sprintf(reply,"V %d %d %d", i, objetSel, tableCartes[i][objetSel] >= 1? 100: 0);
-		broadcastMessage(reply);
+			sprintf(reply,"V %d %d %d", i, objetSel, tableCartes[i][objetSel] >= 1? 100: 0);
+			broadcastMessage(reply);
 	      }
-	      joueurCourant++;
-	      if(joueurCourant == 4)
-		joueurCourant = 0;
-	      
-	      sprintf(reply,"M %d %d %d %d %d",
-		      joueurCourant,horsTour[0],
-		      horsTour[1],horsTour[2],horsTour[3]);
-	      broadcastMessage(reply);
+	      nextplayer(reply);
 	      break;
 	      
 	    case 'S':       // combien		       
@@ -419,21 +389,13 @@ int main(int argc, char *argv[])
 	      printf("Joueur %d demande le nb du objet %d que le joueur %d possede\n", gId, objetSel, joueurSel);
 	      sprintf(reply,"V %d %d %d", joueurSel, objetSel, tableCartes[joueurSel][objetSel]);
 	      broadcastMessage(reply);
-	      
-	      joueurCourant++;
-	      if(joueurCourant == 4)
-		joueurCourant = 0;
-
-	      sprintf(reply,"M %d %d %d %d %d",joueurCourant, horsTour[0],horsTour[1],  horsTour[2],  horsTour[3]);
-	      broadcastMessage(reply);
-
-	      break;
-	      
+	      nextplayer(reply);
+	      break;   
 	    default:
 	      break;
-	    }
-        }
-     	close(newsockfd);
+	   	}
+    }
+    close(newsockfd);
      }
      close(sockfd);
      return 0;

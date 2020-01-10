@@ -325,60 +325,53 @@ int main(int argc, char ** argv)
 	     {
 		    // Message 'I' : le joueur recoit son Id
 	     case 'I':
-		    // RAJOUTER DU CODE ICI
 	       sscanf(gbuffer,"I %d",&gId);
-
-	       printf("Mon ID est: %d\n", gId);
+		   printf("Mon ID est: %d\n", gId);
 	       break;
 		    // Message 'L' : le joueur recoit la liste des joueurs
 	     case 'L':
-		    // RAJOUTER DU CODE ICI
 	       sscanf(gbuffer, "L %s %s %s %s", gNames[0], gNames[1], gNames[2], gNames[3]);
 	       printf("La liste des joueurs: %s %s %s %s\n",gNames[0], gNames[1], gNames[2], gNames[3]);
 	       break;
 		    // Message 'D' : le joueur recoit ses trois cartes
 	     case 'D':
-			  // RAJOUTER DU CODE ICI
 	       sscanf(gbuffer,"D %d %d %d", &b[0], &b[1], &b[2]);
 	       printf("J'ai recu les cartes %d %d %d\n", b[0], b[1], b[2]);
 	       break;
 		    // Message 'M' : le joueur recoit le n° du joueur courant
 		    // Cela permet d'affecter goEnabled pour autoriser l'affichage du bouton go
 	     case 'M':
-	            // RAJOUTER DU CODE ICI
 	       sscanf(gbuffer,"M %d %d %d %d %d",&joueurCourant, &horsTour[0],&horsTour[1],&horsTour[2],&horsTour[3]);
 	       printf("le n° du joueur courant est %d\n",joueurCourant);
 	        
 	       if(joueurCourant == gId && horsTour[gId]!= 1){
-		 printf("C'est moi! \n");
-		 goEnabled = 1;
+		 	printf("C'est moi! \n");
+		 	goEnabled = 1;
 	       }
 	       else if(joueurCourant == gId && horsTour[gId]== 1){
-		 printf("Je suis interdit.");
-		 goEnabled = 0;
-		 sprintf(sendBuffer,"A");
-		 sendMessageToServer(gServerIpAddress, gServerPort, sendBuffer);
+		 	printf("Je suis interdit.");
+			 goEnabled = 0;
+		 	sprintf(sendBuffer,"A");
+		 	sendMessageToServer(gServerIpAddress, gServerPort, sendBuffer);
 	       }
 	       else if (joueurCourant == -1){
-		 goEnabled = 0;
-		 quit = 1;
+			 goEnabled = 0;
+		 	quit = 1;
 	       }
 	       else{
-		 printf("C'est pas moi. \n");
-		 goEnabled = 0;
+		 	printf("C'est pas moi. \n");
+		 	goEnabled = 0;
 	       }
-
 	       break;
 		    // Message 'V' : le joueur recoit une valeur de tableCartes
 	     case 'V':
-		    // RAJOUTER DU CODE ICI
 	       {
-		 int joueurrecu,objetrecu,nbrecu;
-		 sscanf(gbuffer,"V %d %d %d", &joueurrecu, &objetrecu, &nbrecu);
-		 if(!(joueurrecu == gId && nbrecu == 100))
-		 tableCartes[joueurrecu][objetrecu] = nbrecu;
-		 printf("player %d a %d objet %d\n", joueurrecu, tableCartes[joueurrecu][objetrecu], objetrecu);
-		 break;
+		 	int joueurrecu,objetrecu,nbrecu;
+		 	sscanf(gbuffer,"V %d %d %d", &joueurrecu, &objetrecu, &nbrecu);
+		 	if(!(joueurrecu == gId && nbrecu == 100))
+		 		tableCartes[joueurrecu][objetrecu] = nbrecu;
+		 	printf("player %d a %d objet %d\n", joueurrecu, tableCartes[joueurrecu][objetrecu], objetrecu);
+		 	break;
 	       }
 	     }
 	   synchro=0;
