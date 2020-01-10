@@ -375,6 +375,7 @@ int main(int argc, char ** argv)
 	       {
 		 int joueurrecu,objetrecu,nbrecu;
 		 sscanf(gbuffer,"V %d %d %d", &joueurrecu, &objetrecu, &nbrecu);
+		 if(!(joueurrecu == gId && nbrecu == 100))
 		 tableCartes[joueurrecu][objetrecu] = nbrecu;
 		 printf("player %d a %d objet %d\n", joueurrecu, tableCartes[joueurrecu][objetrecu], objetrecu);
 		 break;
